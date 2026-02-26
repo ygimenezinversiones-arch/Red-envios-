@@ -33,18 +33,32 @@ button{
   background:#2f6fed;
   color:white;
   font-weight:bold;
+  cursor:pointer;
+}
+button:active{
+  transform:scale(0.98);
 }
 #msg{
   color:#00ffcc;
   text-align:center;
   min-height:20px;
 }
+.hidden{
+  display:none;
+}
+.panel{
+  color:white;
+  margin-top:15px;
+  padding:10px;
+  background:#0b1320;
+  border-radius:10px;
+}
 </style>
 </head>
 
 <body>
 
-<div class="card">
+<div class="card" id="authCard">
   <h2 style="color:white;text-align:center;">Red Envíos</h2>
 
   <input id="email" type="email" placeholder="Email">
@@ -56,43 +70,112 @@ button{
     <option value="ADMIN">Admin</option>
   </select>
 
-  <button onclick="testJS()">Prueba JS</button>
   <button onclick="registerUser()">Registrarse</button>
   <button onclick="loginUser()">Ingresar</button>
 
   <p id="msg"></p>
 </div>
 
+<div id="panel" class="panel hidden"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-function testJS(){
-  document.getElementById("msg").innerText = "JS funcionando correctamente";
-}
+// 🔵 CONFIGURACIÓN SUPABASE
+const supabaseUrl = "PEGA_AQUI_TU_URL"
+const supabaseKey = "PEGA_AQUI_TU_ANON_KEY"
 
 const { createClient } = supabase
-
-const supabaseUrl = "https://ptnflhxmnkwzfikaaqqc.supabase.co"
-const supabaseKey = "PEGA_AQUI_TU_ANON_KEY_REAL"
-
 const client = createClient(supabaseUrl, supabaseKey)
 
-async function testSupabase(){
-  document.getElementById("msg").innerText = "Probando conexión..."
+// 🔵 REGISTRO
+async function registerUser(){
 
-  const { data, error } = await client
-    .from("users")
-    .select("*")
-    .limit(1)
+  const email = document.getElementById("email").value
+  const password = document.getElementById("password").value
+  const role = document.getElementById("roleSelect").value
 
-  if(error){
-    document.getElementById("msg").innerText = "Error: " + error.message
+  if(!email || !password){
+    document.getElementById("msg").innerText = "Completa los campos"
     return
   }
 
-  document.getElementById("msg").innerText = "Conectado correctamente a Supabase"
+  document.getElementById("msg").innerText = "Registrando..."
+
+  const { data, error } = await client.auth.signUp({
+    email: email,
+    password: password
+  })
+
+  if(error){
+    document.getElementById("msg").innerText = error.message
+    return
+  }
+
+  // Insertar en tabla users
+  await client.from("users").insert([
+    {
+      id: data.user.id,
+      email: email,
+      role: role
+    }
+  ])
+
+  document.getElementById("msg").innerText = "Registro exitoso"
 }
+
+// 🔵 LOGIN
+async function loginUser(){
+
+  const email = document.getElementById("email").value
+  const password = document.getElementById("password").value
+
+  if(!email || !password){
+    document.getElementById("msg").innerText = "Completa los campos"
+    return
+  }
+
+  document.getElementById("msg").innerText = "Ingresando..."
+
+  const { data, error } = await client.auth.signInWithPassword({
+    email: email,
+    password: password
+  })
+
+  if(error){
+    document.getElementById("msg").innerText = error.message
+    return
+  }
+
+  const { data: profile } = await client
+    .from("users")
+    .select("*")
+    .eq("id", data.user.id)
+    .single()
+
+  mostrarPanel(profile.role)
+}
+
+// 🔵 MOSTRAR PANEL
+function mostrarPanel(role){
+
+  document.getElementById("authCard").classList.add("hidden")
+
+  const panel = document.getElementById("panel")
+  panel.classList.remove("hidden")
+
+  if(role === "ADMIN"){
+    panel.innerHTML = "<h3>Panel Admin</h3>"
+  }
+  else if(role === "COURIER"){
+    panel.innerHTML = "<h3>Panel Domiciliario</h3>"
+  }
+  else{
+    panel.innerHTML = "<h3>Panel Cliente</h3>"
+  }
+}
+
 </script>
+
 </body>
 </html>
-
