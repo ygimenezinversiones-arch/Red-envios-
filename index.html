@@ -87,6 +87,24 @@ const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 const { createClient } = supabase
 const client = createClient(supabaseUrl, supabaseKey)
+  // Detectar sesión al cargar
+window.addEventListener("load", async () => {
+  const { data } = await client.auth.getSession()
+
+  if(data.session){
+    const userId = data.session.user.id
+
+    const { data: profile } = await client
+      .from("users")
+      .select("*")
+      .eq("id", userId)
+      .single()
+
+    if(profile){
+      mostrarPanel(profile.role)
+    }
+  }
+})
 
 // 🔵 REGISTRO
 async function registerUser(){
@@ -179,4 +197,5 @@ function mostrarPanel(role){
 
 </body>
 </html>
+
 
