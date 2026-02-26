@@ -63,11 +63,36 @@ button{
   <p id="msg"></p>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
 function testJS(){
   document.getElementById("msg").innerText = "JS funcionando correctamente";
 }
-</script>
 
+const { createClient } = supabase
+
+const supabaseUrl = "https://ptnflhxmnkwzfikaaqqc.supabase.co"
+const supabaseKey = "PEGA_AQUI_TU_ANON_KEY_REAL"
+
+const client = createClient(supabaseUrl, supabaseKey)
+
+async function testSupabase(){
+  document.getElementById("msg").innerText = "Probando conexión..."
+
+  const { data, error } = await client
+    .from("users")
+    .select("*")
+    .limit(1)
+
+  if(error){
+    document.getElementById("msg").innerText = "Error: " + error.message
+    return
+  }
+
+  document.getElementById("msg").innerText = "Conectado correctamente a Supabase"
+}
+</script>
 </body>
 </html>
+
