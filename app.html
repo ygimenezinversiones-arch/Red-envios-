@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Red Envíos</title>
+
+<style>
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#0f172a;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+.card{
+  background:#1e293b;
+  padding:25px;
+  width:320px;
+  border-radius:15px;
+}
+h2{
+  color:white;
+  margin-bottom:20px;
+}
+input, select{
+  width:100%;
+  padding:10px;
+  margin-bottom:12px;
+  border-radius:8px;
+  border:none;
+}
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  margin-bottom:10px;
+  font-weight:bold;
+  cursor:pointer;
+  background:#2563eb;
+  color:white;
+}
+#msg{
+  color:white;
+  min-height:20px;
+}
+.hidden{
+  display:none;
+}
+.panel{
+  color:white;
+  text-align:center;
+}
+</style>
+</head>
+<body>
+
+<div id="authCard" class="card">
+<h2>Red Envíos</h2>
+
+<input id="email" type="email" placeholder="Email">
+<input id="password" type="password" placeholder="Contraseña">
+
+<select id="roleSelect">
+<option value="CLIENTE">Cliente</option>
+<option value="COURIER">Domiciliario</option>
+<option value="ADMIN">Admin</option>
+</select>
+
+<button onclick="registerUser()">Registrarse</button>
+<button onclick="loginUser()">Ingresar</button>
+
+<p id="msg"></p>
+</div>
+
+<div id="panel" class="panel hidden"></div>
+
+<!-- SUPABASE CDN CORRECTO -->
+<script src="supabase.js"></script>
+<script>
+const supabaseUrl = "...";
+const supabaseKey = "...";
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+<script>
+
+// VERIFICACIÓN DE CARGA
+if (!window.supabase) {
+  alert("Supabase NO cargó. Revisa conexión.");
+}
+
+// CONFIGURACIÓN
+const supabaseUrl = "https://ptnflhxmnkwzfikaaqqc.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0bmZsaHhtbm5rd3pmaWthYXFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzNTIxODIsImV4cCI6MjA4NDkyODE4Mn0.ggZxs4eYgI5NNV3WLcv87wer7I8SBcEi5vcfJNT44TU";
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+// REGISTRO
+async function registerUser(){
+
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const role = document.getElementById("roleSelect").value;
+
+  if(!email || !password){
+    document.getElementById("msg").innerText = "Completa los campos";
+    return;
+  }
+
+  const { data, error } = await supabase.auth.signUp({
+    email: email,
+    password: password
+  });
+
+  if(error){
+    document.getElementById("msg").innerText = error.message;
+    return;
+  }
+
+  await supabase.from("users").insert({
+    id: data.user.id,
+    role: role
+  });
+
+  document.getElementById("msg").innerText = "Usuario creado correctamente";
+}
+
+// LOGIN
+async function loginUser(){
+
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  if(!email || !password){
+    document.getElementById("msg").innerText = "Completa los campos";
+    return;
+  }
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email,
+    password: password
+  });
+
+  if(error){
+    document.getElementById("msg").innerText = error.message;
+    return;
+  }
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", data.user.id)
+    .single();
+
+  mostrarPanel(profile.role);
+}
+
+// PANEL SEGÚN ROL
+function mostrarPanel(role){
+
+  document.getElementById("authCard").classList.add("hidden");
+
+  const panel = document.getElementById("panel");
+  panel.classList.remove("hidden");
+
+  if(role === "CLIENTE"){
+    panel.innerHTML = "<h2>Panel Cliente</h2>";
+  }
+
+  if(role === "COURIER"){
+    panel.innerHTML = "<h2>Panel Domiciliario</h2>";
+  }
+
+  if(role === "ADMIN"){
+    panel.innerHTML = "<h2>Panel Admin</h2>";
+  }
+
+}
+
+</script>
+
+</body>
+</html>
