@@ -81,32 +81,33 @@ button:active{
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-// 🔵 CONFIGURACIÓN SUPABASE
-const supabaseUrl = "https://ptnflhxmnnkwzfikaaqc.supabase.co"
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0bmZsaHhtbm5rd3pmaWthYXFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzNTIxODIsImV4cCI6MjA4NDkyODE4Mn0.ggZxs4eYgI5NNV3WLcv87wer7I8SBcEi5vcfJNT44TU"
-
+const supabaseUrl = "https://ptnflhxmnnkwzifikaaqc.supabase.co"
+const supabaseKey = "TU_PUBLIC_ANON_KEY_AQUI"
 const { createClient } = supabase
 const client = createClient(supabaseUrl, supabaseKey)
-  // Detectar sesión al cargar
+
+function mostrarMensaje(texto){
+  document.getElementById("msg").innerText = texto
+}
+
+function mostrarPanel(role){
+  document.querySelector(".card").style.display = "none"
+  const panel = document.getElementById("panel")
+  panel.classList.remove("hidden")
+  panel.innerHTML = `<h2>Bienvenido ${role}</h2>`
+}
+
+// Detectar sesión al cargar
 window.addEventListener("load", async () => {
   const { data } = await client.auth.getSession()
 
   if(data.session){
-    const userId = data.session.user.id
-
-    const { data: profile } = await client
-      .from("users")
-      .select("*")
-      .eq("id", userId)
-      .single()
-
-    if(profile){
-      mostrarPanel(profile.role)
-    }
+    const user = data.session.user
+    await cargarPerfil(user)
   }
 })
 
-// 🔵 REGISTRO
+// REGISTRO
 async function registerUser(){
 
   const email = document.getElementById("email").value
@@ -114,92 +115,83 @@ async function registerUser(){
   const role = document.getElementById("roleSelect").value
 
   if(!email || !password){
-    document.getElementById("msg").innerText = "Completa los campos"
+    mostrarMensaje("Completa los campos")
     return
   }
 
-  document.getElementById("msg").innerText = "Registrando..."
+  mostrarMensaje("Registrando...")
 
   const { data, error } = await client.auth.signUp({
-  email: email,
-  password: password,
-  options: {
-    emailRedirectTo: "https://ygimenezinversiones-arch.github.io/Red-envios-/"
-  }
-})
+    email,
+    password,
+    options:{
+      emailRedirectTo:"https://ygimenezinversiones-arch.github.io/Red-envios-/"
+    }
+  })
 
   if(error){
-    document.getElementById("msg").innerText = error.message
+    mostrarMensaje(error.message)
     return
   }
 
-  // Insertar en tabla users
-  await client.from("users").insert([
-    {
-      id: data.user.id,
-      email: email,
-      role: role
-    }
-  ])
-
-  document.getElementById("msg").innerText = "Registro exitoso"
+  mostrarMensaje("Registro exitoso. Confirma tu email.")
 }
 
-// 🔵 LOGIN
+// LOGIN
 async function loginUser(){
 
   const email = document.getElementById("email").value
   const password = document.getElementById("password").value
 
   if(!email || !password){
-    document.getElementById("msg").innerText = "Completa los campos"
+    mostrarMensaje("Completa los campos")
     return
   }
 
-  document.getElementById("msg").innerText = "Ingresando..."
+  mostrarMensaje("Ingresando...")
 
   const { data, error } = await client.auth.signInWithPassword({
-    email: email,
-    password: password
+    email,
+    password
   })
 
   if(error){
-    document.getElementById("msg").innerText = error.message
+    mostrarMensaje(error.message)
     return
   }
 
-  const { data: profile } = await client
+  await cargarPerfil(data.user)
+}
+
+// PERFIL
+async function cargarPerfil(user){
+
+  let { data: profile } = await client
     .from("users")
     .select("*")
-    .eq("id", data.user.id)
+    .eq("id", user.id)
     .single()
+
+  // Si no existe perfil, lo creamos automáticamente
+  if(!profile){
+    const role = document.getElementById("roleSelect").value || "CLIENTE"
+
+    await client.from("users").insert([{
+      id: user.id,
+      email: user.email,
+      role: role
+    }])
+
+    profile = { role: role }
+  }
 
   mostrarPanel(profile.role)
 }
-
-// 🔵 MOSTRAR PANEL
-function mostrarPanel(role){
-
-  document.getElementById("authCard").classList.add("hidden")
-
-  const panel = document.getElementById("panel")
-  panel.classList.remove("hidden")
-
-  if(role === "ADMIN"){
-    panel.innerHTML = "<h3>Panel Admin</h3>"
-  }
-  else if(role === "COURIER"){
-    panel.innerHTML = "<h3>Panel Domiciliario</h3>"
-  }
-  else{
-    panel.innerHTML = "<h3>Panel Cliente</h3>"
-  }
-}
-
-</script>
+    </script>
 
 </body>
 </html>
+
 
 
 
